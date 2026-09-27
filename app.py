@@ -29,10 +29,18 @@ Return only valid JSON in this exact structure:
         }
     ]
 }
+
+Rules:
+- Return JSON only
+- Do not include markdown
+- Do not include explanation text before or after JSON 
 """
 response = client.models.generate_content(
-    model="gemini-3.5-flash",
-    contents=[prompt, image]
+    model="gemini-3.6-flash",
+    contents=[prompt, image],
+    config=types.GenerateContentConfig(
+        response_mime_type="application/json"
+    )
 )
 
 print(response.text)
