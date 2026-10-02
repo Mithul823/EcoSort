@@ -1,9 +1,11 @@
 import os
+import json
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from PIL import Image
+from prompt import ANALYZE_WASTE_PROMPT
 
 load_dotenv()
 
@@ -13,34 +15,41 @@ client = genai.Client(api_key=api_key)
 
 image = Image.open("test_waste.jpg")
 
-prompt = """
-Analyze this waste image.
-
-Identify the visible waste items.
-
-Return only valid JSON in this exact structure:
-{
-    "items": [
-        {
-            "item_name": "string",
-            "material:: "string",
-            "waste_category": "string",
-            "disposal_method": "string"
-        }
-    ]
-}
-
-Rules:
-- Return JSON only
-- Do not include markdown
-- Do not include explanation text before or after JSON 
-"""
 response = client.models.generate_content(
-    model="gemini-3.6-flash",
-    contents=[prompt, image],
+    model="gemini-3.5-flash",
+    contents=[ANALYZE_WASTE_PROMPT, image],
     config=types.GenerateContentConfig(
         response_mime_type="application/json"
     )
 )
 
-print(response.text)
+data = json.loads(response.text)
+print("\nDetected Waste Items:\n")
+
+for index, item in enumerate(data["items"], start=1):
+    print(f"Item {index}")
+    print(f"Name: {item['item_name']}")
+    print(f"Material: {item['material']}")
+    print(f"Waste Category: {item['waste_category']}")
+    print(f"Disposal Method: {item['disposal_method']}")
+    print("-" * 80)
+
+category_counts = {}
+for item in data["items"]:
+    category = item["waste_category"]
+
+    if category in category_counts:
+        category_counts[category] += 1 
+    else:
+        category_counts[category] = 1
+
+print("\nWaste Category Summary:\n")
+for category, count in category_counts.items():
+    print(f"{category}: {count}")
+
+total_items = len(data["items"])
+recyclable_items = category_counts.get("Recyclable", 0)
+recyclability_score = (recyclable_items / total_items) * 100
+
+print("\nRecyclability Score:")
+print(f"{recyclability_score:.2f}%")
