@@ -1,11 +1,11 @@
 import os
-import json
 
 from dotenv import load_dotenv
 from google import genai
-from google.genai import types
 from PIL import Image
 from prompt import ANALYZE_WASTE_PROMPT
+from gemini_service import analyze_waste_image
+
 
 load_dotenv()
 
@@ -15,15 +15,11 @@ client = genai.Client(api_key=api_key)
 
 image = Image.open("test_waste.jpg")
 
-response = client.models.generate_content(
-    model="gemini-3.5-flash",
-    contents=[ANALYZE_WASTE_PROMPT, image],
-    config=types.GenerateContentConfig(
-        response_mime_type="application/json"
-    )
+data = analyze_waste_image(
+    client=client,
+    image=image,
+    model_name="gemini-3.5-flash"
 )
-
-data = json.loads(response.text)
 print("\nDetected Waste Items:\n")
 
 for index, item in enumerate(data["items"], start=1):
