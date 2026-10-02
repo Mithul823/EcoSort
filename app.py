@@ -5,6 +5,7 @@ from google import genai
 from PIL import Image
 from prompt import ANALYZE_WASTE_PROMPT
 from gemini_service import analyze_waste_image
+from waste_utils import count_categories, calculate_recyclability_score
 
 
 load_dotenv()
@@ -30,22 +31,15 @@ for index, item in enumerate(data["items"], start=1):
     print(f"Disposal Method: {item['disposal_method']}")
     print("-" * 80)
 
-category_counts = {}
-for item in data["items"]:
-    category = item["waste_category"]
-
-    if category in category_counts:
-        category_counts[category] += 1 
-    else:
-        category_counts[category] = 1
-
+items = data["items"]
+category_counts = count_categories(items)
 print("\nWaste Category Summary:\n")
 for category, count in category_counts.items():
     print(f"{category}: {count}")
 
-total_items = len(data["items"])
-recyclable_items = category_counts.get("Recyclable", 0)
-recyclability_score = (recyclable_items / total_items) * 100
-
+recyclability_score = calculate_recyclability_score(
+    items,
+    category_counts
+)
 print("\nRecyclability Score:")
 print(f"{recyclability_score:.2f}%")
